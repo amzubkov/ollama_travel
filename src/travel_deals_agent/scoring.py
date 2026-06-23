@@ -107,6 +107,14 @@ def is_relevant_item(item: RawItem, watchlist: Watchlist) -> bool:
     return not any(term.lower() in text for term in watchlist.exclude_keywords)
 
 
+def classify_item(item: RawItem, watchlist: Watchlist) -> str:
+    if is_cruise_discount_candidate(item, watchlist):
+        return "cruise"
+    if is_hotel_discount_candidate(item, watchlist):
+        return "hotel"
+    return "flight"
+
+
 def heuristic_score(item: RawItem, watchlist: Watchlist) -> int:
     text = f"{item.title}\n{item.summary}".lower()
     score = 10

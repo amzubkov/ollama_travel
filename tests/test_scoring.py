@@ -1,5 +1,6 @@
 from travel_deals_agent.models import RawItem
 from travel_deals_agent.scoring import (
+    classify_item,
     heuristic_score,
     is_cruise_discount_candidate,
     is_hotel_discount_candidate,
@@ -115,3 +116,31 @@ def test_cruise_discount_candidate_rejects_out_of_scope_regions() -> None:
         min_cruise_discount_percent=50,
     )
     assert not is_cruise_discount_candidate(item, watchlist)
+
+
+def test_classify_item_prefers_hotel_and_cruise() -> None:
+    hotel = RawItem(
+        source="test",
+        title="Paris hotel 60% off",
+        url="https://example.com/paris-hotel",
+    )
+    cruise = RawItem(
+        source="test",
+        title="Mediterranean cruise 60% off",
+        url="https://example.com/med-cruise-classify",
+    )
+    flight = RawItem(
+        source="test",
+        title="Cheap flights from Tbilisi",
+        url="https://example.com/flight-classify",
+    )
+    watchlist = Watchlist(
+        hotel_keywords=["hotel"],
+        hotel_region_keywords=["paris"],
+        cruise_keywords=["cruise"],
+        cruise_region_keywords=["mediterranean"],
+        include_keywords=["tbilisi"],
+    )
+    assert classify_item(hotel, watchlist) == "hotel"
+    assert classify_item(cruise, watchlist) == "cruise"
+    assert classify_item(flight, watchlist) == "flight"

@@ -7,8 +7,8 @@ from rich.table import Table
 from travel_deals_agent.collectors import collect_rss
 from travel_deals_agent.llm import analyze_item
 from travel_deals_agent.models import DealAnalysis
-from travel_deals_agent.notifiers import format_alert, send_telegram
-from travel_deals_agent.scoring import heuristic_score, is_relevant_item
+from travel_deals_agent.notifiers import format_alert, format_scan_summary, send_telegram
+from travel_deals_agent.scoring import classify_item, heuristic_score, is_relevant_item
 from travel_deals_agent.settings import get_settings
 from travel_deals_agent.sources import load_sources
 from travel_deals_agent.storage import (
@@ -48,6 +48,11 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
     inserted = 0
     alerted = 0
     errors = 0
+    category_stats = {
+        "flight": {"candidates": 0, "inserted": 0, "alerted": 0},
+        "hotel": {"candidates": 0, "inserted": 0, "alerted": 0},
+        "cruise": {"candidates": 0, "inserted": 0, "alerted": 0},
+    }
 
     for source in source_config.rss:
         console.print(f"[bold]Collecting[/bold] {source.name}")
@@ -76,6 +81,9 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
                 filtered += 1
                 source_filtered += 1
                 continue
+
+            item_type = classify_item(item, source_config.watchlist)
+            category_stats[item_type]["candidates"] += 1
 
             if deal_exists(conn, str(item.url)):
                 skipped += 1
@@ -106,11 +114,13 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
 
             if upsert_deal(conn, item, analysis):
                 inserted += 1
+                category_stats[item_type]["inserted"] += 1
                 source_inserted += 1
                 if alert and analysis.is_alert_worthy:
                     text = format_alert(item, analysis)
                     if send_telegram(settings, text):
                         alerted += 1
+                        category_stats[item_type]["alerted"] += 1
                         source_alerted += 1
                     else:
                         console.print(f"[cyan]Alert candidate[/cyan] {analysis.score}/100 {item.title}")
@@ -141,6 +151,18 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
     console.print(
         f"Scanned {total} items, filtered {filtered}, skipped {skipped}, inserted {inserted}, alerted {alerted}."
     )
+    if alert and settings.send_scan_summary:
+        summary = format_scan_summary(
+            total=total,
+            filtered=filtered,
+            skipped=skipped,
+            inserted=inserted,
+            alerted=alerted,
+            errors=errors,
+            category_stats=category_stats,
+        )
+        if not send_telegram(settings, summary):
+            console.print("[cyan]Scan summary[/cyan]\n" + summary)
 
 
 @main.command("list")

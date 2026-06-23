@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     ollama_model: str = "glm-5.2"
     database_path: Path = Path("./data/deals.sqlite3")
     min_score_to_alert: int = 70
+    send_scan_summary: bool = True
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
 
