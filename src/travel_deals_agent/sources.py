@@ -15,6 +15,12 @@ class Watchlist(BaseModel):
     keywords: list[str] = []
     include_keywords: list[str] = []
     exclude_keywords: list[str] = []
+    hotel_keywords: list[str] = []
+    hotel_region_keywords: list[str] = []
+    min_hotel_discount_percent: int = 50
+    cruise_keywords: list[str] = []
+    cruise_region_keywords: list[str] = []
+    min_cruise_discount_percent: int = 50
 
 
 class SourceConfig(BaseModel):

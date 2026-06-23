@@ -10,7 +10,7 @@ SYSTEM_PROMPT = """You are a travel-deals analyst.
 Extract real terms, hidden costs, risks, and next verification steps.
 Be skeptical of clickbait. Return only valid JSON matching:
 {
-  "category": "flight_deal|event_bundle|promo|miles|unknown",
+  "category": "flight_deal|hotel_deal|cruise_deal|event_bundle|promo|miles|unknown",
   "score": 0-100,
   "summary": "short human alert",
   "extracted_terms": ["..."],
