@@ -8,10 +8,21 @@ from travel_deals_agent.collectors import collect_rss
 from travel_deals_agent.llm import analyze_item
 from travel_deals_agent.models import DealAnalysis
 from travel_deals_agent.notifiers import format_alert, send_telegram
-from travel_deals_agent.scoring import heuristic_score
+from travel_deals_agent.scoring import heuristic_score, is_relevant_item
 from travel_deals_agent.settings import get_settings
 from travel_deals_agent.sources import load_sources
-from travel_deals_agent.storage import connect, deal_exists, get_deal_stats, list_deals, upsert_deal
+from travel_deals_agent.storage import (
+    connect,
+    deal_exists,
+    finish_scan_run,
+    get_deal_stats,
+    list_deals,
+    list_scan_runs,
+    list_scan_source_runs,
+    record_scan_source_run,
+    start_scan_run,
+    upsert_deal,
+)
 
 console = Console()
 
@@ -29,24 +40,46 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
     settings = get_settings()
     source_config = load_sources(sources_path)
     conn = connect(settings.database_path)
+    scan_run_id = start_scan_run(conn, len(source_config.rss), no_llm)
 
     total = 0
+    filtered = 0
     skipped = 0
     inserted = 0
     alerted = 0
+    errors = 0
 
     for source in source_config.rss:
         console.print(f"[bold]Collecting[/bold] {source.name}")
+        source_skipped = 0
+        source_filtered = 0
+        source_inserted = 0
+        source_alerted = 0
         try:
             items = collect_rss(source)
         except Exception as exc:
+            errors += 1
             console.print(f"[red]Failed[/red] {source.name}: {exc}")
+            record_scan_source_run(
+                conn,
+                scan_run_id,
+                source=source.name,
+                url=str(source.url),
+                status="failed",
+                error=str(exc),
+            )
             continue
 
         for item in items:
             total += 1
+            if not is_relevant_item(item, source_config.watchlist):
+                filtered += 1
+                source_filtered += 1
+                continue
+
             if deal_exists(conn, str(item.url)):
                 skipped += 1
+                source_skipped += 1
                 continue
 
             base_score = heuristic_score(item, source_config.watchlist)
@@ -73,14 +106,41 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
 
             if upsert_deal(conn, item, analysis):
                 inserted += 1
+                source_inserted += 1
                 if alert and analysis.is_alert_worthy:
                     text = format_alert(item, analysis)
                     if send_telegram(settings, text):
                         alerted += 1
+                        source_alerted += 1
                     else:
                         console.print(f"[cyan]Alert candidate[/cyan] {analysis.score}/100 {item.title}")
 
-    console.print(f"Scanned {total} items, skipped {skipped}, inserted {inserted}, alerted {alerted}.")
+        record_scan_source_run(
+            conn,
+            scan_run_id,
+            source=source.name,
+            url=str(source.url),
+            status="ok",
+            fetched_items=len(items),
+            filtered_items=source_filtered,
+            skipped_items=source_skipped,
+            inserted_items=source_inserted,
+            alerted_items=source_alerted,
+        )
+
+    finish_scan_run(
+        conn,
+        scan_run_id,
+        total_items=total,
+        filtered_items=filtered,
+        skipped_items=skipped,
+        inserted_items=inserted,
+        alerted_items=alerted,
+        error_count=errors,
+    )
+    console.print(
+        f"Scanned {total} items, filtered {filtered}, skipped {skipped}, inserted {inserted}, alerted {alerted}."
+    )
 
 
 @main.command("list")
@@ -99,6 +159,88 @@ def list_command(limit: int) -> None:
     for deal in deals:
         table.add_row(str(deal.score), deal.source, deal.title, deal.url)
 
+    console.print(table)
+
+
+@main.command()
+@click.option("--sources", "sources_path", default="config/sources.json", type=click.Path(path_type=Path))
+def sources(sources_path: Path) -> None:
+    source_config = load_sources(sources_path)
+
+    source_table = Table(title="Configured RSS Sources")
+    source_table.add_column("#", justify="right")
+    source_table.add_column("Name")
+    source_table.add_column("URL")
+    for index, source in enumerate(source_config.rss, start=1):
+        source_table.add_row(str(index), source.name, str(source.url))
+    console.print(source_table)
+
+    watch_table = Table(title="Watchlist")
+    watch_table.add_column("Type")
+    watch_table.add_column("Values")
+    watch_table.add_row("Origins", ", ".join(source_config.watchlist.origins))
+    watch_table.add_row("Destinations", ", ".join(source_config.watchlist.destinations))
+    watch_table.add_row("Keywords", ", ".join(source_config.watchlist.keywords))
+    console.print(watch_table)
+
+
+@main.command()
+@click.option("--limit", default=10, type=int)
+@click.option("--run-id", type=int, default=None)
+def runs(limit: int, run_id: int | None) -> None:
+    settings = get_settings()
+    conn = connect(settings.database_path)
+
+    if run_id is None:
+        table = Table(title="Recent Scan Runs")
+        table.add_column("ID", justify="right")
+        table.add_column("Started")
+        table.add_column("Finished")
+        table.add_column("Sources", justify="right")
+        table.add_column("Items", justify="right")
+        table.add_column("Filtered", justify="right")
+        table.add_column("Skipped", justify="right")
+        table.add_column("Inserted", justify="right")
+        table.add_column("Alerts", justify="right")
+        table.add_column("Errors", justify="right")
+        table.add_column("LLM")
+        for row in list_scan_runs(conn, limit=limit):
+            table.add_row(
+                str(row["id"]),
+                row["started_at"],
+                row["finished_at"] or "-",
+                str(row["sources_count"]),
+                str(row["total_items"]),
+                str(row["filtered_items"]),
+                str(row["skipped_items"]),
+                str(row["inserted_items"]),
+                str(row["alerted_items"]),
+                str(row["error_count"]),
+                "off" if row["no_llm"] else "on",
+            )
+        console.print(table)
+        return
+
+    table = Table(title=f"Scan Run {run_id} Sources")
+    table.add_column("Source")
+    table.add_column("Status")
+    table.add_column("Fetched", justify="right")
+    table.add_column("Filtered", justify="right")
+    table.add_column("Skipped", justify="right")
+    table.add_column("Inserted", justify="right")
+    table.add_column("Alerts", justify="right")
+    table.add_column("Error")
+    for row in list_scan_source_runs(conn, run_id):
+        table.add_row(
+            row["source"],
+            row["status"],
+            str(row["fetched_items"]),
+            str(row["filtered_items"]),
+            str(row["skipped_items"]),
+            str(row["inserted_items"]),
+            str(row["alerted_items"]),
+            row["error"] or "",
+        )
     console.print(table)
 
 

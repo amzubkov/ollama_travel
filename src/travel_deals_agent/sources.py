@@ -13,6 +13,8 @@ class Watchlist(BaseModel):
     origins: list[str] = []
     destinations: list[str] = []
     keywords: list[str] = []
+    include_keywords: list[str] = []
+    exclude_keywords: list[str] = []
 
 
 class SourceConfig(BaseModel):
