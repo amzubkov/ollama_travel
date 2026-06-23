@@ -1,0 +1,138 @@
+{
+  "rss": [
+    {
+      "name": "Secret Flying",
+      "url": "https://www.secretflying.com/feed/"
+    },
+    {
+      "name": "Travel Dealz",
+      "url": "https://travel-dealz.com/feed/"
+    },
+    {
+      "name": "The Flight Deal",
+      "url": "https://www.theflightdeal.com/feed/"
+    },
+    {
+      "name": "Fly4free",
+      "url": "https://www.fly4free.com/feed/"
+    },
+    {
+      "name": "LoyaltyLobby",
+      "url": "https://loyaltylobby.com/feed/"
+    },
+    {
+      "name": "Frequent Miler",
+      "url": "https://frequentmiler.com/feed/"
+    },
+    {
+      "name": "One Mile at a Time",
+      "url": "https://onemileatatime.com/feed/"
+    },
+    {
+      "name": "View from the Wing",
+      "url": "https://viewfromthewing.com/feed/"
+    },
+    {
+      "name": "Points Miles and Bling",
+      "url": "https://pointsmilesandbling.com/feed/"
+    },
+    {
+      "name": "God Save The Points",
+      "url": "https://www.godsavethepoints.com/feed/"
+    },
+    {
+      "name": "Head for Points",
+      "url": "https://www.headforpoints.com/feed/"
+    }
+  ],
+  "watchlist": {
+    "origins": [
+      "TBS",
+      "KUT",
+      "BUS",
+      "EVN",
+      "GYD",
+      "IST",
+      "SAW",
+      "ESB",
+      "AYT",
+      "DXB",
+      "AUH",
+      "DOH",
+      "SHJ",
+      "ATH",
+      "LCA",
+      "WAW",
+      "BUD",
+      "VIE",
+      "FCO",
+      "MXP"
+    ],
+    "destinations": [
+      "AKL",
+      "CHC",
+      "SYD",
+      "MEL",
+      "NRT",
+      "HND",
+      "KIX",
+      "ICN",
+      "SIN",
+      "BKK",
+      "HKT",
+      "DPS",
+      "JFK",
+      "EWR",
+      "LAX",
+      "SFO",
+      "MIA",
+      "LHR",
+      "LGW",
+      "CDG",
+      "AMS",
+      "MAD",
+      "BCN"
+    ],
+    "keywords": [
+      "free flight",
+      "free flights",
+      "flight included",
+      "mistake fare",
+      "mistake fares",
+      "companion pass",
+      "companion voucher",
+      "football ticket",
+      "match ticket",
+      "event ticket",
+      "concert ticket",
+      "festival",
+      "bundle",
+      "package deal",
+      "flash sale",
+      "status match",
+      "tier match",
+      "bonus miles",
+      "bonus points",
+      "award sale",
+      "transfer bonus",
+      "miles sale",
+      "points sale",
+      "stopover",
+      "open-jaw",
+      "multi-city",
+      "business class",
+      "premium economy",
+      "new zealand",
+      "australia",
+      "japan",
+      "korea",
+      "hawaii",
+      "error fare",
+      "promo code",
+      "coupon code",
+      "2-for-1",
+      "two for one",
+      "buy one get one"
+    ]
+  }
+}
