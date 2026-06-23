@@ -17,20 +17,16 @@ HIGH_VALUE_TERMS = {
 
 def is_relevant_item(item: RawItem, watchlist: Watchlist) -> bool:
     text = f"{item.title}\n{item.summary}".lower()
-    include_terms = [
+    target_origin_terms = [
         *watchlist.origins,
-        *watchlist.destinations,
-        *watchlist.keywords,
         *watchlist.include_keywords,
     ]
-    has_include_match = any(term.lower() in text for term in include_terms)
-    has_exclude_match = any(term.lower() in text for term in watchlist.exclude_keywords)
+    has_target_origin_match = any(term.lower() in text for term in target_origin_terms)
 
-    if not has_include_match:
-        return False
-    if has_exclude_match:
-        return False
-    return True
+    if has_target_origin_match:
+        return True
+
+    return not any(term.lower() in text for term in watchlist.exclude_keywords)
 
 
 def heuristic_score(item: RawItem, watchlist: Watchlist) -> int:

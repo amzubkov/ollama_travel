@@ -6,7 +6,16 @@ services:
     volumes:
       - ./data:/app/data
       - ./config:/app/config:ro
+    user: "1000:1000"
     mem_limit: 512m
     cpus: 1.0
+    pids_limit: 128
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     restart: "no"
     command: ["scan"]

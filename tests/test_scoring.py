@@ -26,15 +26,29 @@ def test_region_filter_excludes_america_without_interest_match() -> None:
     assert not is_relevant_item(item, watchlist)
 
 
-def test_region_filter_keeps_target_region() -> None:
+def test_region_filter_keeps_target_origin_to_any_destination() -> None:
     item = RawItem(
         source="test",
-        title="Cheap flights from Tbilisi to Milan",
-        url="https://example.com/tbilisi-milan",
+        title="Cheap flights from Tbilisi to New York",
+        url="https://example.com/tbilisi-new-york",
     )
     watchlist = Watchlist(
         origins=["TBS"],
-        include_keywords=["tbilisi", "milan", "europe"],
-        exclude_keywords=["hawaii"],
+        include_keywords=["tbilisi"],
+        exclude_keywords=["new york", "hawaii"],
+    )
+    assert is_relevant_item(item, watchlist)
+
+
+def test_region_filter_keeps_added_departure_points() -> None:
+    item = RawItem(
+        source="test",
+        title="Business class deal from Dubai to Tokyo",
+        url="https://example.com/dubai-tokyo",
+    )
+    watchlist = Watchlist(
+        origins=["DXB", "AUH", "KUF", "ULV", "URA"],
+        include_keywords=["dubai", "abu dhabi", "samara", "ulyanovsk", "uralsk"],
+        exclude_keywords=["tokyo"],
     )
     assert is_relevant_item(item, watchlist)

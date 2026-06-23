@@ -34,6 +34,7 @@ def analyze_item(item: RawItem, base_score: int, settings: Settings) -> DealAnal
     client = Client(
         host="https://ollama.com",
         headers={"Authorization": f"Bearer {settings.ollama_api_key}"},
+        timeout=120,
     )
     response = client.chat(
         model=settings.ollama_model,
