@@ -306,6 +306,8 @@ def sources(sources_path: Path) -> None:
     hotel_table.add_column("City")
     hotel_table.add_column("Dates")
     hotel_table.add_column("Adults", justify="right")
+    hotel_table.add_column("Max RUB/night", justify="right")
+    hotel_table.add_column("Min rating", justify="right")
     for index, source in enumerate(source_config.tracked_hotel_stays, start=1):
         hotel_table.add_row(
             str(index),
@@ -313,6 +315,8 @@ def sources(sources_path: Path) -> None:
             source.city,
             f"{source.checkin} to {source.checkout}",
             str(source.adults),
+            str(source.max_price_rub or "-"),
+            f"{source.min_rating:g}" if source.min_rating else "-",
         )
     console.print(hotel_table)
 

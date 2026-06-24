@@ -94,12 +94,18 @@ def test_tracked_hotel_stay_builds_search_link_and_alertable_score() -> None:
         checkin="2026-06-25",
         checkout="2026-06-26",
         adults=2,
+        max_price_rub=10_000,
+        min_rating=9.0,
     )
     item = collect_tracked_hotel_stay(source)[0]
     watchlist = Watchlist(include_keywords=["saint petersburg"])
 
     assert "Tracked hotel stay: Saint Petersburg" in item.title
+    assert "max 10000 RUB/night" in item.title
+    assert "rating >= 9/10" in item.title
     assert "location_id=3381" in str(item.url)
     assert "checkin=2026-06-25" in str(item.url)
+    assert "price_max=10000" in str(item.url)
+    assert "rating_min=9" in str(item.url)
     assert is_relevant_item(item, watchlist)
     assert heuristic_score(item, watchlist) >= 60

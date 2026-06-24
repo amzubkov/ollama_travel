@@ -111,7 +111,9 @@
       "location_id": 3381,
       "checkin": "2026-06-25",
       "checkout": "2026-06-26",
-      "adults": 2
+      "adults": 2,
+      "max_price_rub": 10000,
+      "min_rating": 9.0
     }
   ],
   "watchlist": {

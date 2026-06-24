@@ -55,6 +55,8 @@ def test_format_telegram_help_includes_tracked_items() -> None:
                     checkin="2026-06-25",
                     checkout="2026-06-26",
                     adults=2,
+                    max_price_rub=10_000,
+                    min_rating=9.0,
                 )
             ],
         ),
@@ -63,5 +65,5 @@ def test_format_telegram_help_includes_tracked_items() -> None:
 
     assert "Travel Deals Agent help" in text
     assert "Moscow (MOW) -> Saint Petersburg (LED)" in text
-    assert "Saint Petersburg, 2026-06-25 to 2026-06-26, adults 2" in text
+    assert "Saint Petersburg, 2026-06-25 to 2026-06-26, adults 2, max 10000 RUB/night, rating >= 9/10" in text
     assert "Aviasales Calendar KUF Anywhere: from KUF, 2 destinations" in text

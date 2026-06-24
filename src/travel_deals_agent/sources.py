@@ -40,6 +40,8 @@ class TrackedHotelStaySource(BaseModel):
     checkin: str
     checkout: str
     adults: int = 2
+    max_price_rub: int | None = None
+    min_rating: float | None = None
 
 
 class Watchlist(BaseModel):

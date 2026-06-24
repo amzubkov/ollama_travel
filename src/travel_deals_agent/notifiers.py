@@ -88,7 +88,12 @@ def format_telegram_help(source_config: SourceConfig, settings: Settings) -> str
     lines.extend(["", "Tracked hotel stays:"])
     if source_config.tracked_hotel_stays:
         for source in source_config.tracked_hotel_stays:
-            lines.append(f"- {source.city}, {source.checkin} to {source.checkout}, adults {source.adults}")
+            max_price = f", max {source.max_price_rub} RUB/night" if source.max_price_rub else ""
+            min_rating = f", rating >= {source.min_rating:g}/10" if source.min_rating else ""
+            lines.append(
+                f"- {source.city}, {source.checkin} to {source.checkout}, "
+                f"adults {source.adults}{max_price}{min_rating}"
+            )
     else:
         lines.append("- none")
 
@@ -106,7 +111,7 @@ def format_telegram_help(source_config: SourceConfig, settings: Settings) -> str
             "",
             "Notes:",
             "- This Telegram bot is outbound-only right now; commands above are run over SSH.",
-            "- Hotel stay tracking currently sends a dated search link, not extracted hotel prices.",
+            "- Hotel stay tracking currently sends a dated search link with price/rating criteria, not extracted hotel prices.",
         ]
     )
     return "\n".join(lines)

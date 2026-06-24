@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from urllib.parse import urlencode
 
 import feedparser
 import httpx
@@ -124,16 +125,37 @@ def collect_aviasales_exact_trip(source: AviasalesExactTripSource, timeout: floa
 
 
 def collect_tracked_hotel_stay(source: TrackedHotelStaySource) -> list[RawItem]:
+    params = [
+        ("checkin", source.checkin),
+        ("checkout", source.checkout),
+        ("adults", str(source.adults)),
+    ]
     if source.location_id is not None:
-        query = (
-            f"location_id={source.location_id}&location_type=city&checkin={source.checkin}"
-            f"&checkout={source.checkout}&adults={source.adults}"
-        )
+        params.insert(0, ("location_type", "city"))
+        params.insert(0, ("location_id", str(source.location_id)))
     else:
-        query = f"location={source.city}&checkin={source.checkin}&checkout={source.checkout}&adults={source.adults}"
+        params.insert(0, ("location", source.city))
+    if source.max_price_rub is not None:
+        params.append(("price_max", str(source.max_price_rub)))
+    if source.min_rating is not None:
+        params.append(("rating_min", f"{source.min_rating:g}"))
+
+    query = urlencode(params)
     url = f"https://www.aviasales.ru/hotels/search?{query}"
-    title = f"Tracked hotel stay: {source.city}, {source.checkin} to {source.checkout}, {source.adults} adults"
-    summary = "Tracked hotel search link. Price is not extracted yet; open the link to compare current hotel offers."
+    constraints = []
+    if source.max_price_rub is not None:
+        constraints.append(f"max {source.max_price_rub} RUB/night")
+    if source.min_rating is not None:
+        constraints.append(f"rating >= {source.min_rating:g}/10")
+    constraints_text = f", {', '.join(constraints)}" if constraints else ""
+    title = (
+        f"Tracked hotel stay: {source.city}, {source.checkin} to {source.checkout}, "
+        f"{source.adults} adults{constraints_text}"
+    )
+    summary = (
+        "Tracked hotel search link. Price is not extracted yet; "
+        f"open the link to compare current hotel offers{constraints_text}."
+    )
     return [
         RawItem(
             source=source.name,
