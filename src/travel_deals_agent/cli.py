@@ -12,7 +12,7 @@ from travel_deals_agent.collectors import (
 )
 from travel_deals_agent.llm import analyze_item
 from travel_deals_agent.models import DealAnalysis
-from travel_deals_agent.notifiers import format_alert, format_scan_summary, send_telegram
+from travel_deals_agent.notifiers import format_alert, format_scan_summary, format_telegram_help, send_telegram
 from travel_deals_agent.scoring import classify_item, heuristic_score, is_relevant_item
 from travel_deals_agent.settings import get_settings
 from travel_deals_agent.sources import load_sources
@@ -323,6 +323,22 @@ def sources(sources_path: Path) -> None:
     watch_table.add_row("Destinations", ", ".join(source_config.watchlist.destinations))
     watch_table.add_row("Keywords", ", ".join(source_config.watchlist.keywords))
     console.print(watch_table)
+
+
+@main.command("telegram-help")
+@click.option("--sources", "sources_path", default="config/sources.json", type=click.Path(path_type=Path))
+@click.option("--print-only", is_flag=True, help="Print help without sending it to Telegram.")
+def telegram_help(sources_path: Path, print_only: bool) -> None:
+    settings = get_settings()
+    source_config = load_sources(sources_path)
+    text = format_telegram_help(source_config, settings)
+    if print_only:
+        console.print(text)
+        return
+    if send_telegram(settings, text):
+        console.print("Telegram help sent.")
+    else:
+        console.print("[cyan]Telegram help[/cyan]\n" + text)
 
 
 @main.command()
