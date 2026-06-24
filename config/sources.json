@@ -116,6 +116,20 @@
       "min_rating": 9.0
     }
   ],
+  "booking_hotel_searches": [
+    {
+      "name": "Booking Saint Petersburg Jun 25-26",
+      "city": "Saint Petersburg",
+      "checkin": "2026-06-25",
+      "checkout": "2026-06-26",
+      "adults": 2,
+      "rooms": 1,
+      "currency": "RUB",
+      "max_price_rub": 10000,
+      "min_rating": 9.0,
+      "limit": 5
+    }
+  ],
   "watchlist": {
     "origins": [
       "TBS",

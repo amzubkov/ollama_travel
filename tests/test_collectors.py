@@ -1,6 +1,7 @@
 from travel_deals_agent.collectors import (
     _items_from_aviasales_calendar_response,
     _items_from_aviasales_exact_trip_response,
+    _parse_booking_hotel_cards,
     collect_tracked_hotel_stay,
 )
 from travel_deals_agent.scoring import heuristic_score, is_relevant_item
@@ -109,3 +110,26 @@ def test_tracked_hotel_stay_builds_search_link_and_alertable_score() -> None:
     assert "rating_min=9" in str(item.url)
     assert is_relevant_item(item, watchlist)
     assert heuristic_score(item, watchlist) >= 60
+
+
+def test_parse_booking_hotel_cards_extracts_price_rating_and_url() -> None:
+    cards = _parse_booking_hotel_cards(
+        """
+        <div data-testid="property-card">
+          <a data-testid="title-link" href="/hotel/ru/example.html?label=abc">
+            <div data-testid="title">Example Hotel</div>
+          </a>
+          <span data-testid="price-and-discounted-price">RUB 8,900</span>
+          <div data-testid="review-score">Scored 9.3</div>
+        </div>
+        """
+    )
+
+    assert cards == [
+        {
+            "url": "https://www.booking.com/hotel/ru/example.html?label=abc",
+            "title": "Example Hotel",
+            "price_rub": 8900,
+            "rating": 9.3,
+        }
+    ]

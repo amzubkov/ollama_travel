@@ -7,6 +7,7 @@ from rich.table import Table
 from travel_deals_agent.collectors import (
     collect_aviasales_calendar,
     collect_aviasales_exact_trip,
+    collect_booking_hotel_search,
     collect_rss,
     collect_tracked_hotel_stay,
 )
@@ -50,6 +51,7 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
         + len(source_config.aviasales_calendar)
         + len(source_config.aviasales_exact_trips)
         + len(source_config.tracked_hotel_stays)
+        + len(source_config.booking_hotel_searches)
     )
     scan_run_id = start_scan_run(conn, sources_count, no_llm)
 
@@ -208,6 +210,24 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
             continue
         process_items(source.name, "https://www.aviasales.ru/hotels/search", items)
 
+    for source in source_config.booking_hotel_searches:
+        console.print(f"[bold]Collecting[/bold] {source.name}")
+        try:
+            items = collect_booking_hotel_search(source)
+        except Exception as exc:
+            errors += 1
+            console.print(f"[red]Failed[/red] {source.name}: {exc}")
+            record_scan_source_run(
+                conn,
+                scan_run_id,
+                source=source.name,
+                url="https://www.booking.com/searchresults.html",
+                status="failed",
+                error=str(exc),
+            )
+            continue
+        process_items(source.name, "https://www.booking.com/searchresults.html", items)
+
     finish_scan_run(
         conn,
         scan_run_id,
@@ -320,6 +340,28 @@ def sources(sources_path: Path) -> None:
         )
     console.print(hotel_table)
 
+    booking_table = Table(title="Configured Booking Hotel Searches")
+    booking_table.add_column("#", justify="right")
+    booking_table.add_column("Name")
+    booking_table.add_column("City")
+    booking_table.add_column("Dates")
+    booking_table.add_column("Adults", justify="right")
+    booking_table.add_column("Max RUB/night", justify="right")
+    booking_table.add_column("Min rating", justify="right")
+    booking_table.add_column("Limit", justify="right")
+    for index, source in enumerate(source_config.booking_hotel_searches, start=1):
+        booking_table.add_row(
+            str(index),
+            source.name,
+            source.city,
+            f"{source.checkin} to {source.checkout}",
+            str(source.adults),
+            str(source.max_price_rub or "-"),
+            f"{source.min_rating:g}" if source.min_rating else "-",
+            str(source.limit),
+        )
+    console.print(booking_table)
+
     watch_table = Table(title="Watchlist")
     watch_table.add_column("Type")
     watch_table.add_column("Values")
@@ -425,6 +467,7 @@ def status(sources_path: Path) -> None:
     summary.add_row("Aviasales calendar sources", str(len(source_config.aviasales_calendar)))
     summary.add_row("Aviasales exact trip sources", str(len(source_config.aviasales_exact_trips)))
     summary.add_row("Tracked hotel stay sources", str(len(source_config.tracked_hotel_stays)))
+    summary.add_row("Booking hotel search sources", str(len(source_config.booking_hotel_searches)))
     summary.add_row("Origins watched", str(len(source_config.watchlist.origins)))
     summary.add_row("Destinations watched", str(len(source_config.watchlist.destinations)))
     summary.add_row("Keywords watched", str(len(source_config.watchlist.keywords)))

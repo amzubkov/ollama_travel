@@ -44,6 +44,19 @@ class TrackedHotelStaySource(BaseModel):
     min_rating: float | None = None
 
 
+class BookingHotelSearchSource(BaseModel):
+    name: str = "Booking Hotel Search"
+    city: str
+    checkin: str
+    checkout: str
+    adults: int = 2
+    rooms: int = 1
+    currency: str = "RUB"
+    max_price_rub: int | None = None
+    min_rating: float | None = None
+    limit: int = 10
+
+
 class Watchlist(BaseModel):
     origins: list[str] = []
     destinations: list[str] = []
@@ -63,6 +76,7 @@ class SourceConfig(BaseModel):
     aviasales_calendar: list[AviasalesCalendarSource] = []
     aviasales_exact_trips: list[AviasalesExactTripSource] = []
     tracked_hotel_stays: list[TrackedHotelStaySource] = []
+    booking_hotel_searches: list[BookingHotelSearchSource] = []
     watchlist: Watchlist = Watchlist()
 
 

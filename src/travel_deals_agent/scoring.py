@@ -129,6 +129,9 @@ def is_relevant_item(item: RawItem, watchlist: Watchlist) -> bool:
 
 
 def classify_item(item: RawItem, watchlist: Watchlist) -> str:
+    text = f"{item.title}\n{item.summary}".lower()
+    if "tracked hotel" in text:
+        return "hotel"
     if is_cruise_discount_candidate(item, watchlist):
         return "cruise"
     if is_hotel_discount_candidate(item, watchlist):

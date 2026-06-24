@@ -97,6 +97,18 @@ def format_telegram_help(source_config: SourceConfig, settings: Settings) -> str
     else:
         lines.append("- none")
 
+    lines.extend(["", "Booking hotel searches:"])
+    if source_config.booking_hotel_searches:
+        for source in source_config.booking_hotel_searches:
+            max_price = f", max {source.max_price_rub} RUB/night" if source.max_price_rub else ""
+            min_rating = f", rating >= {source.min_rating:g}/10" if source.min_rating else ""
+            lines.append(
+                f"- {source.city}, {source.checkin} to {source.checkout}, "
+                f"adults {source.adults}{max_price}{min_rating}, limit {source.limit}"
+            )
+    else:
+        lines.append("- none")
+
     lines.extend(["", "Broad sources:"])
     lines.append(f"- RSS feeds: {len(source_config.rss)}")
     lines.append(f"- Aviasales calendar sources: {len(source_config.aviasales_calendar)}")
@@ -112,6 +124,7 @@ def format_telegram_help(source_config: SourceConfig, settings: Settings) -> str
             "Notes:",
             "- This Telegram bot is outbound-only right now; commands above are run over SSH.",
             "- Hotel stay tracking currently sends a dated search link with price/rating criteria, not extracted hotel prices.",
+            "- Booking scraping is experimental and skips runs when Booking returns a challenge page.",
         ]
     )
     return "\n".join(lines)

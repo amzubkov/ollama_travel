@@ -1,6 +1,12 @@
 from travel_deals_agent.notifiers import format_scan_summary, format_telegram_help
 from travel_deals_agent.settings import Settings
-from travel_deals_agent.sources import AviasalesCalendarSource, AviasalesExactTripSource, SourceConfig, TrackedHotelStaySource
+from travel_deals_agent.sources import (
+    AviasalesCalendarSource,
+    AviasalesExactTripSource,
+    BookingHotelSearchSource,
+    SourceConfig,
+    TrackedHotelStaySource,
+)
 
 
 def test_format_scan_summary_includes_categories() -> None:
@@ -59,6 +65,18 @@ def test_format_telegram_help_includes_tracked_items() -> None:
                     min_rating=9.0,
                 )
             ],
+            booking_hotel_searches=[
+                BookingHotelSearchSource(
+                    name="Booking Saint Petersburg Jun 25-26",
+                    city="Saint Petersburg",
+                    checkin="2026-06-25",
+                    checkout="2026-06-26",
+                    adults=2,
+                    max_price_rub=10_000,
+                    min_rating=9.0,
+                    limit=5,
+                )
+            ],
         ),
         Settings(min_score_to_alert=60),
     )
@@ -66,4 +84,6 @@ def test_format_telegram_help_includes_tracked_items() -> None:
     assert "Travel Deals Agent help" in text
     assert "Moscow (MOW) -> Saint Petersburg (LED)" in text
     assert "Saint Petersburg, 2026-06-25 to 2026-06-26, adults 2, max 10000 RUB/night, rating >= 9/10" in text
+    assert "Booking hotel searches:" in text
+    assert "limit 5" in text
     assert "Aviasales Calendar KUF Anywhere: from KUF, 2 destinations" in text
