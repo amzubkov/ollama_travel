@@ -15,6 +15,8 @@ HIGH_VALUE_TERMS = {
     "football": 10,
     "match ticket": 20,
     "low fare": 20,
+    "tracked trip": 55,
+    "tracked hotel": 55,
 }
 
 HOTEL_TERMS = {
@@ -104,13 +106,16 @@ def looks_like_cruise_item(item: RawItem, watchlist: Watchlist) -> bool:
 
 
 def is_relevant_item(item: RawItem, watchlist: Watchlist) -> bool:
+    text = f"{item.title}\n{item.summary}".lower()
+    if "tracked trip" in text or "tracked hotel" in text:
+        return True
+
     if is_hotel_discount_candidate(item, watchlist) or is_cruise_discount_candidate(item, watchlist):
         return True
 
     if looks_like_hotel_item(item, watchlist) or looks_like_cruise_item(item, watchlist):
         return False
 
-    text = f"{item.title}\n{item.summary}".lower()
     target_origin_terms = [
         *watchlist.origins,
         *watchlist.include_keywords,

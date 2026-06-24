@@ -51,3 +51,5 @@ The first version collects RSS deals, stores them in SQLite, scores them, and as
 ## Sources
 
 Configured sources include RSS deal feeds and an experimental Aviasales calendar source. The Aviasales source checks one-way minimum calendar fares from configured origins to configured destinations through Aviasales JSON calendar data, then stores only routes below `max_price_rub`.
+
+Exact tracked trips and hotel stays can also be configured. Exact trips use Aviasales calendar data for a specific route/date pair; tracked hotel stays currently store and alert a dated hotel-search link without extracting hotel prices.

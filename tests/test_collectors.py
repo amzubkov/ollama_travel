@@ -1,6 +1,10 @@
-from travel_deals_agent.collectors import _items_from_aviasales_calendar_response
+from travel_deals_agent.collectors import (
+    _items_from_aviasales_calendar_response,
+    _items_from_aviasales_exact_trip_response,
+    collect_tracked_hotel_stay,
+)
 from travel_deals_agent.scoring import heuristic_score, is_relevant_item
-from travel_deals_agent.sources import AviasalesCalendarSource, Watchlist
+from travel_deals_agent.sources import AviasalesCalendarSource, AviasalesExactTripSource, TrackedHotelStaySource, Watchlist
 
 
 def test_aviasales_calendar_keeps_best_low_fare() -> None:
@@ -50,3 +54,52 @@ def test_aviasales_low_fare_is_relevant_and_alertable_by_heuristic() -> None:
 
     assert is_relevant_item(item, watchlist)
     assert heuristic_score(item, watchlist) >= 35
+
+
+def test_aviasales_exact_trip_keeps_exact_dates() -> None:
+    source = AviasalesExactTripSource(
+        name="Tracked Flight MOW LED Jun 25-26",
+        origin="MOW",
+        destination="LED",
+        origin_name="Moscow",
+        destination_name="Saint Petersburg",
+        depart_date="2026-06-25",
+        return_date="2026-06-26",
+        max_price_rub=20_000,
+    )
+    item = _items_from_aviasales_exact_trip_response(
+        source=source,
+        payload={
+            "prices": [
+                {"depart_date": "2026-06-25", "return_date": "2026-06-27", "price": 7_000, "state": "EXISTS"},
+                {"depart_date": "2026-06-25", "return_date": "2026-06-26", "price": 6_613, "state": "EXISTS"},
+            ]
+        },
+    )[0]
+    watchlist = Watchlist(origins=["MOW"], include_keywords=["moscow", "saint petersburg"])
+
+    assert "Moscow (MOW) to Saint Petersburg (LED)" in item.title
+    assert "2026-06-25 to 2026-06-26" in item.title
+    assert "6613 RUB" in item.title
+    assert str(item.url).endswith("/search/MOW2506LED26061")
+    assert is_relevant_item(item, watchlist)
+    assert heuristic_score(item, watchlist) >= 60
+
+
+def test_tracked_hotel_stay_builds_search_link_and_alertable_score() -> None:
+    source = TrackedHotelStaySource(
+        name="Tracked Hotel Saint Petersburg Jun 25-26",
+        city="Saint Petersburg",
+        location_id=3381,
+        checkin="2026-06-25",
+        checkout="2026-06-26",
+        adults=2,
+    )
+    item = collect_tracked_hotel_stay(source)[0]
+    watchlist = Watchlist(include_keywords=["saint petersburg"])
+
+    assert "Tracked hotel stay: Saint Petersburg" in item.title
+    assert "location_id=3381" in str(item.url)
+    assert "checkin=2026-06-25" in str(item.url)
+    assert is_relevant_item(item, watchlist)
+    assert heuristic_score(item, watchlist) >= 60

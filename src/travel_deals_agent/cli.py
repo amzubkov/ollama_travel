@@ -4,7 +4,12 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from travel_deals_agent.collectors import collect_aviasales_calendar, collect_rss
+from travel_deals_agent.collectors import (
+    collect_aviasales_calendar,
+    collect_aviasales_exact_trip,
+    collect_rss,
+    collect_tracked_hotel_stay,
+)
 from travel_deals_agent.llm import analyze_item
 from travel_deals_agent.models import DealAnalysis
 from travel_deals_agent.notifiers import format_alert, format_scan_summary, send_telegram
@@ -40,7 +45,12 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
     settings = get_settings()
     source_config = load_sources(sources_path)
     conn = connect(settings.database_path)
-    sources_count = len(source_config.rss) + len(source_config.aviasales_calendar)
+    sources_count = (
+        len(source_config.rss)
+        + len(source_config.aviasales_calendar)
+        + len(source_config.aviasales_exact_trips)
+        + len(source_config.tracked_hotel_stays)
+    )
     scan_run_id = start_scan_run(conn, sources_count, no_llm)
 
     total = 0
@@ -162,6 +172,42 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
             continue
         process_items(source.name, "https://explore-api.aviasales.ru/api/v6/calendar.json", items)
 
+    for source in source_config.aviasales_exact_trips:
+        console.print(f"[bold]Collecting[/bold] {source.name}")
+        try:
+            items = collect_aviasales_exact_trip(source)
+        except Exception as exc:
+            errors += 1
+            console.print(f"[red]Failed[/red] {source.name}: {exc}")
+            record_scan_source_run(
+                conn,
+                scan_run_id,
+                source=source.name,
+                url="https://explore-api.aviasales.ru/api/v6/calendar.json",
+                status="failed",
+                error=str(exc),
+            )
+            continue
+        process_items(source.name, "https://explore-api.aviasales.ru/api/v6/calendar.json", items)
+
+    for source in source_config.tracked_hotel_stays:
+        console.print(f"[bold]Collecting[/bold] {source.name}")
+        try:
+            items = collect_tracked_hotel_stay(source)
+        except Exception as exc:
+            errors += 1
+            console.print(f"[red]Failed[/red] {source.name}: {exc}")
+            record_scan_source_run(
+                conn,
+                scan_run_id,
+                source=source.name,
+                url="https://www.aviasales.ru/hotels/search",
+                status="failed",
+                error=str(exc),
+            )
+            continue
+        process_items(source.name, "https://www.aviasales.ru/hotels/search", items)
+
     finish_scan_run(
         conn,
         scan_run_id,
@@ -236,6 +282,39 @@ def sources(sources_path: Path) -> None:
             str(source.max_price_rub or "-"),
         )
     console.print(aviasales_table)
+
+    exact_table = Table(title="Configured Aviasales Exact Trips")
+    exact_table.add_column("#", justify="right")
+    exact_table.add_column("Name")
+    exact_table.add_column("Route")
+    exact_table.add_column("Dates")
+    exact_table.add_column("Max RUB", justify="right")
+    for index, source in enumerate(source_config.aviasales_exact_trips, start=1):
+        dates = source.depart_date if source.return_date is None else f"{source.depart_date} to {source.return_date}"
+        exact_table.add_row(
+            str(index),
+            source.name,
+            f"{source.origin}-{source.destination}",
+            dates,
+            str(source.max_price_rub or "-"),
+        )
+    console.print(exact_table)
+
+    hotel_table = Table(title="Configured Tracked Hotel Stays")
+    hotel_table.add_column("#", justify="right")
+    hotel_table.add_column("Name")
+    hotel_table.add_column("City")
+    hotel_table.add_column("Dates")
+    hotel_table.add_column("Adults", justify="right")
+    for index, source in enumerate(source_config.tracked_hotel_stays, start=1):
+        hotel_table.add_row(
+            str(index),
+            source.name,
+            source.city,
+            f"{source.checkin} to {source.checkout}",
+            str(source.adults),
+        )
+    console.print(hotel_table)
 
     watch_table = Table(title="Watchlist")
     watch_table.add_column("Type")
@@ -324,6 +403,8 @@ def status(sources_path: Path) -> None:
     summary.add_row("Database", str(settings.database_path))
     summary.add_row("RSS sources", str(len(source_config.rss)))
     summary.add_row("Aviasales calendar sources", str(len(source_config.aviasales_calendar)))
+    summary.add_row("Aviasales exact trip sources", str(len(source_config.aviasales_exact_trips)))
+    summary.add_row("Tracked hotel stay sources", str(len(source_config.tracked_hotel_stays)))
     summary.add_row("Origins watched", str(len(source_config.watchlist.origins)))
     summary.add_row("Destinations watched", str(len(source_config.watchlist.destinations)))
     summary.add_row("Keywords watched", str(len(source_config.watchlist.keywords)))

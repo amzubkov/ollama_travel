@@ -90,6 +90,30 @@
       "limit_per_origin": 20
     }
   ],
+  "aviasales_exact_trips": [
+    {
+      "name": "Tracked Flight MOW LED Jun 25-26",
+      "origin": "MOW",
+      "destination": "LED",
+      "origin_name": "Moscow",
+      "destination_name": "Saint Petersburg",
+      "depart_date": "2026-06-25",
+      "return_date": "2026-06-26",
+      "currency": "rub",
+      "locale": "ru_RU",
+      "max_price_rub": 20000
+    }
+  ],
+  "tracked_hotel_stays": [
+    {
+      "name": "Tracked Hotel Saint Petersburg Jun 25-26",
+      "city": "Saint Petersburg",
+      "location_id": 3381,
+      "checkin": "2026-06-25",
+      "checkout": "2026-06-26",
+      "adults": 2
+    }
+  ],
   "watchlist": {
     "origins": [
       "TBS",

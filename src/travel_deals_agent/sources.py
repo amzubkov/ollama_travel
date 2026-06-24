@@ -20,6 +20,28 @@ class AviasalesCalendarSource(BaseModel):
     limit_per_origin: int = 30
 
 
+class AviasalesExactTripSource(BaseModel):
+    name: str = "Aviasales Exact Trip"
+    origin: str
+    destination: str
+    origin_name: str = ""
+    destination_name: str = ""
+    depart_date: str
+    return_date: str | None = None
+    currency: str = "rub"
+    locale: str = "ru_RU"
+    max_price_rub: int | None = None
+
+
+class TrackedHotelStaySource(BaseModel):
+    name: str = "Tracked Hotel Stay"
+    city: str
+    location_id: int | None = None
+    checkin: str
+    checkout: str
+    adults: int = 2
+
+
 class Watchlist(BaseModel):
     origins: list[str] = []
     destinations: list[str] = []
@@ -37,6 +59,8 @@ class Watchlist(BaseModel):
 class SourceConfig(BaseModel):
     rss: list[RssSource] = []
     aviasales_calendar: list[AviasalesCalendarSource] = []
+    aviasales_exact_trips: list[AviasalesExactTripSource] = []
+    tracked_hotel_stays: list[TrackedHotelStaySource] = []
     watchlist: Watchlist = Watchlist()
 
 
