@@ -89,6 +89,21 @@ def test_hotel_discount_candidate_rejects_out_of_scope_regions() -> None:
     assert not is_hotel_discount_candidate(item, watchlist)
 
 
+def test_out_of_scope_hotel_is_not_relevant() -> None:
+    item = RawItem(
+        source="test",
+        title="Chicago luxury hotel 60% off",
+        url="https://example.com/chicago-hotel",
+    )
+    watchlist = Watchlist(
+        hotel_keywords=["hotel"],
+        hotel_region_keywords=["europe", "russia", "georgia", "turkey"],
+        min_hotel_discount_percent=50,
+        exclude_keywords=["chicago"],
+    )
+    assert not is_relevant_item(item, watchlist)
+
+
 def test_cruise_discount_candidate_keeps_target_regions() -> None:
     item = RawItem(
         source="test",

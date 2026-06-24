@@ -90,9 +90,24 @@ def is_cruise_discount_candidate(item: RawItem, watchlist: Watchlist) -> bool:
     )
 
 
+def looks_like_hotel_item(item: RawItem, watchlist: Watchlist) -> bool:
+    text = f"{item.title}\n{item.summary}".lower()
+    hotel_terms = {*HOTEL_TERMS, *[term.lower() for term in watchlist.hotel_keywords]}
+    return any(term in text for term in hotel_terms)
+
+
+def looks_like_cruise_item(item: RawItem, watchlist: Watchlist) -> bool:
+    text = f"{item.title}\n{item.summary}".lower()
+    cruise_terms = {*CRUISE_TERMS, *[term.lower() for term in watchlist.cruise_keywords]}
+    return any(term in text for term in cruise_terms)
+
+
 def is_relevant_item(item: RawItem, watchlist: Watchlist) -> bool:
     if is_hotel_discount_candidate(item, watchlist) or is_cruise_discount_candidate(item, watchlist):
         return True
+
+    if looks_like_hotel_item(item, watchlist) or looks_like_cruise_item(item, watchlist):
+        return False
 
     text = f"{item.title}\n{item.summary}".lower()
     target_origin_terms = [
