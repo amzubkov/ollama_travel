@@ -4,7 +4,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from travel_deals_agent.collectors import collect_rss
+from travel_deals_agent.collectors import collect_aviasales_calendar, collect_rss
 from travel_deals_agent.llm import analyze_item
 from travel_deals_agent.models import DealAnalysis
 from travel_deals_agent.notifiers import format_alert, format_scan_summary, send_telegram
@@ -40,7 +40,8 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
     settings = get_settings()
     source_config = load_sources(sources_path)
     conn = connect(settings.database_path)
-    scan_run_id = start_scan_run(conn, len(source_config.rss), no_llm)
+    sources_count = len(source_config.rss) + len(source_config.aviasales_calendar)
+    scan_run_id = start_scan_run(conn, sources_count, no_llm)
 
     total = 0
     filtered = 0
@@ -54,26 +55,12 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
         "cruise": {"candidates": 0, "inserted": 0, "alerted": 0},
     }
 
-    for source in source_config.rss:
-        console.print(f"[bold]Collecting[/bold] {source.name}")
+    def process_items(source_name: str, source_url: str, items: list) -> tuple[int, int, int, int, int]:
+        nonlocal total, filtered, skipped, inserted, alerted
         source_skipped = 0
         source_filtered = 0
         source_inserted = 0
         source_alerted = 0
-        try:
-            items = collect_rss(source)
-        except Exception as exc:
-            errors += 1
-            console.print(f"[red]Failed[/red] {source.name}: {exc}")
-            record_scan_source_run(
-                conn,
-                scan_run_id,
-                source=source.name,
-                url=str(source.url),
-                status="failed",
-                error=str(exc),
-            )
-            continue
 
         for item in items:
             total += 1
@@ -128,8 +115,8 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
         record_scan_source_run(
             conn,
             scan_run_id,
-            source=source.name,
-            url=str(source.url),
+            source=source_name,
+            url=source_url,
             status="ok",
             fetched_items=len(items),
             filtered_items=source_filtered,
@@ -137,6 +124,43 @@ def scan(sources_path: Path, no_llm: bool, alert: bool) -> None:
             inserted_items=source_inserted,
             alerted_items=source_alerted,
         )
+        return len(items), source_filtered, source_skipped, source_inserted, source_alerted
+
+    for source in source_config.rss:
+        console.print(f"[bold]Collecting[/bold] {source.name}")
+        try:
+            items = collect_rss(source)
+        except Exception as exc:
+            errors += 1
+            console.print(f"[red]Failed[/red] {source.name}: {exc}")
+            record_scan_source_run(
+                conn,
+                scan_run_id,
+                source=source.name,
+                url=str(source.url),
+                status="failed",
+                error=str(exc),
+            )
+            continue
+        process_items(source.name, str(source.url), items)
+
+    for source in source_config.aviasales_calendar:
+        console.print(f"[bold]Collecting[/bold] {source.name}")
+        try:
+            items = collect_aviasales_calendar(source)
+        except Exception as exc:
+            errors += 1
+            console.print(f"[red]Failed[/red] {source.name}: {exc}")
+            record_scan_source_run(
+                conn,
+                scan_run_id,
+                source=source.name,
+                url="https://explore-api.aviasales.ru/api/v6/calendar.json",
+                status="failed",
+                error=str(exc),
+            )
+            continue
+        process_items(source.name, "https://explore-api.aviasales.ru/api/v6/calendar.json", items)
 
     finish_scan_run(
         conn,
@@ -196,6 +220,22 @@ def sources(sources_path: Path) -> None:
     for index, source in enumerate(source_config.rss, start=1):
         source_table.add_row(str(index), source.name, str(source.url))
     console.print(source_table)
+
+    aviasales_table = Table(title="Configured Aviasales Calendar Sources")
+    aviasales_table.add_column("#", justify="right")
+    aviasales_table.add_column("Name")
+    aviasales_table.add_column("Origins")
+    aviasales_table.add_column("Destinations")
+    aviasales_table.add_column("Max RUB", justify="right")
+    for index, source in enumerate(source_config.aviasales_calendar, start=1):
+        aviasales_table.add_row(
+            str(index),
+            source.name,
+            ", ".join(source.origins),
+            ", ".join(source.destinations),
+            str(source.max_price_rub or "-"),
+        )
+    console.print(aviasales_table)
 
     watch_table = Table(title="Watchlist")
     watch_table.add_column("Type")
@@ -283,6 +323,7 @@ def status(sources_path: Path) -> None:
     summary.add_row("Alert threshold", str(settings.min_score_to_alert))
     summary.add_row("Database", str(settings.database_path))
     summary.add_row("RSS sources", str(len(source_config.rss)))
+    summary.add_row("Aviasales calendar sources", str(len(source_config.aviasales_calendar)))
     summary.add_row("Origins watched", str(len(source_config.watchlist.origins)))
     summary.add_row("Destinations watched", str(len(source_config.watchlist.destinations)))
     summary.add_row("Keywords watched", str(len(source_config.watchlist.keywords)))

@@ -47,3 +47,7 @@ docker compose run --rm agent status
 ```
 
 The first version collects RSS deals, stores them in SQLite, scores them, and asks GLM 5.2 to extract conditions, risks, and a short alert summary.
+
+## Sources
+
+Configured sources include RSS deal feeds and an experimental Aviasales calendar source. The Aviasales source checks one-way minimum calendar fares from configured origins to configured destinations through Aviasales JSON calendar data, then stores only routes below `max_price_rub`.

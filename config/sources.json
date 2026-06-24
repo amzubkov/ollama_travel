@@ -45,6 +45,51 @@
       "url": "https://www.headforpoints.com/feed/"
     }
   ],
+  "aviasales_calendar": [
+    {
+      "name": "Aviasales Calendar KUF Anywhere",
+      "origins": [
+        "KUF"
+      ],
+      "destinations": [
+        "MOW",
+        "LED",
+        "AER",
+        "KZN",
+        "SVX",
+        "MRV",
+        "IST",
+        "AYT",
+        "ESB",
+        "ADB",
+        "TBS",
+        "KUT",
+        "EVN",
+        "GYD",
+        "LCA",
+        "ATH",
+        "WAW",
+        "BUD",
+        "VIE",
+        "FCO",
+        "MXP",
+        "BER",
+        "PRG",
+        "DXB",
+        "AUH",
+        "BKK",
+        "HKT",
+        "DEL",
+        "PEK",
+        "ICN"
+      ],
+      "currency": "rub",
+      "locale": "ru_RU",
+      "max_price_rub": 20000,
+      "lookahead_days": 90,
+      "limit_per_origin": 20
+    }
+  ],
   "watchlist": {
     "origins": [
       "TBS",

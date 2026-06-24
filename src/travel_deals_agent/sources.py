@@ -9,6 +9,17 @@ class RssSource(BaseModel):
     url: HttpUrl
 
 
+class AviasalesCalendarSource(BaseModel):
+    name: str = "Aviasales Calendar"
+    origins: list[str] = []
+    destinations: list[str] = []
+    currency: str = "rub"
+    locale: str = "ru_RU"
+    max_price_rub: int | None = None
+    lookahead_days: int = 90
+    limit_per_origin: int = 30
+
+
 class Watchlist(BaseModel):
     origins: list[str] = []
     destinations: list[str] = []
@@ -25,6 +36,7 @@ class Watchlist(BaseModel):
 
 class SourceConfig(BaseModel):
     rss: list[RssSource] = []
+    aviasales_calendar: list[AviasalesCalendarSource] = []
     watchlist: Watchlist = Watchlist()
 
 

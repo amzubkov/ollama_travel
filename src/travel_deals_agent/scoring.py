@@ -14,6 +14,7 @@ HIGH_VALUE_TERMS = {
     "new zealand": 15,
     "football": 10,
     "match ticket": 20,
+    "low fare": 20,
 }
 
 HOTEL_TERMS = {
